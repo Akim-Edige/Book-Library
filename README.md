@@ -72,18 +72,12 @@ Bookshelf/
 
 ## Демонстрация
 
-Создание книг
-![Uploading A7D7E20B-6CE8-4CE4-B4F3-ED5618CFC6DE.gif…]()
+https://drive.google.com/file/d/1mWiTtbWNuduC0Q23C_j6EwU3R7d7pNEk/view?usp=sharing
 
-Изменение книг
-![Uploading 5663F814-3100-41AD-AEAF-15192548CC18.gif…]()
 
-Админ панель.
+Чтобы зайти в админ панель изпользуйте это:
 Логин: library-admin
 Пароль: adminadmin
-
-![Uploading FEDCB17B-B158-4B4E-8ECF-DCCCF9F0F3E3.gif…]()
-
 
 ## Установка
 
