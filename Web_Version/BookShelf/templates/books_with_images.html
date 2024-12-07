@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Онлайн Библиотека</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            position: relative; /* To ensure the "Create" button is positioned relative to the body */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            margin-right: 20px;
+        }
+        .filter-group label {
+            font-weight: bold;
+        }
+        .filter-group input, .filter-group select, .filter-group button {
+            padding: 8px;
+        }
+        .filter-group input[type="range"] {
+            width: 200px;
+        }
+        .book-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            list-style-type: none;
+            padding: 0;
+        }
+        .book-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        .book-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        .pagination button.disabled {
+            cursor: not-allowed;
+        }
+
+        /* Styles for the Create button */
+        .create-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .create-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <button class="create-button" onclick="window.location.href='/create'">Добавить Книгу</button>
+
+    <div class="container">
+        <h1>Онлайн Библиотека</h1>
+        <div class="filters">
+            <div class="filter-group">
+                <label for="search"></label>
+                <input type="text" id="search" placeholder="Поиск по id, автору или году издания">
+            </div>
+            <div class="filter-group">
+                <label for="year-min">Мин. год издания:</label>
+                <input type="range" id="year-min" min="1800" max="2024" value="1800">
+                <span id="year-min-value">1800</span>
+            </div>
+            <div class="filter-group">
+                <label for="year-max">Макс. год издания:</label>
+                <input type="range" id="year-max" min="1800" max="2024" value="2024">
+                <span id="year-max-value">2024</span>
+            </div>
+            <div class="filter-group">
+                <label for="status">Статус:</label>
+                <select id="status">
+                    <option value="">Все</option>
+                    <option value="В наличии">В наличии</option>
+                    <option value="Выдана">Выдана</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <button id="apply-search" onclick="fetchBooks()">Искать</button>
+            </div>
+        </div>
+
+        <ul id="book-list" class="book-list"></ul>
+
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <script>
+        const API_URL = '/api/books/';
+        let currentPage = 1;
+        let totalPages = 1;
+
+        function fetchBooks() {
+            const search = document.getElementById('search').value;
+            const yearMin = document.getElementById('year-min').value;
+            const yearMax = document.getElementById('year-max').value;
+            const status = document.getElementById('status').value;
+
+            const url = new URL(API_URL, window.location.origin);
+            const params = new URLSearchParams();
+
+            if (search) params.append('search', search);
+            if (yearMin) params.append('year_min', yearMin);
+            if (yearMax) params.append('year_max', yearMax);
+            if (status) params.append('status', status);
+            params.append('page', currentPage);
+
+            url.search = params.toString();
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    totalPages = Math.ceil(data.count / 4);
+                    displayBooks(data.results);
+                    updatePagination(data);
+                })
+                .catch(err => console.error('Error fetching books:', err));
+        }
+
+        function displayBooks(books) {
+            const bookList = document.getElementById('book-list');
+            bookList.innerHTML = ''; // Clear previous results
+
+            books.forEach(book => {
+                const li = document.createElement('li');
+                li.classList.add('book-item');
+
+                // Fallback to default image if cover_image is not available
+                const coverImage = book.cover_image ? book.cover_image : '/media/book_covers/default_cover.jpg';
+
+                li.innerHTML = `
+                    <a href="/book/${book.id}">
+                        <img src="${coverImage}" alt="${book.title}">
+                    </a>
+                    <h3>${book.title}</h3>
+                    <p><strong>Автор:</strong> ${book.author}</p>
+                    <p><strong>Год Издания:</strong> ${book.year}</p>
+                    <p><strong>Статус:</strong> ${book.status}</p>
+                `;
+                bookList.appendChild(li);
+            });
+        }
+
+        function updatePagination(data) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            const prevButton = document.createElement('button');
+            prevButton.innerText = 'Назад';
+            prevButton.disabled = currentPage <= 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchBooks();
+                }
+            });
+
+            const nextButton = document.createElement('button');
+            nextButton.innerText = 'Вперед';
+            nextButton.disabled = currentPage >= totalPages;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    fetchBooks();
+                }
+            });
+
+            pagination.appendChild(prevButton);
+            pagination.appendChild(nextButton);
+        }
+
+        document.getElementById('year-min').addEventListener('input', function () {
+            document.getElementById('year-min-value').textContent = this.value;
+        });
+        document.getElementById('year-max').addEventListener('input', function () {
+            document.getElementById('year-max-value').textContent = this.value;
+        });
+        document.getElementById('status').addEventListener('change', function () {
+            currentPage = 1;
+        });
+
+        window.onload = fetchBooks;
+    </script>
+</body>
+</html>

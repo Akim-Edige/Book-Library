@@ -1,0 +1,116 @@
+import os
+
+from django.shortcuts import redirect
+from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+from .serializers import BookSerializer, BookFilter
+from .forms import BookForm
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import mixins, viewsets, status
+from django.shortcuts import render
+from .models import Book
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+
+# Create your views here.
+
+def create_book(request):
+    if request.method == 'POST':
+        form = BookForm(request.POST)
+        if form.is_valid():
+            form.save()  # Save the form data to the database
+            return redirect('show_books')  # Redirect to a new page after successful submission
+    else:
+        form = BookForm()
+
+    return render(request, 'create.html', {'form': form})
+
+
+class BookPagination(PageNumberPagination):
+    page_size = 4  # Number of items per page
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+class BookViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    filter_backends = (DjangoFilterBackend,)  # Enable Django filter
+    filterset_class = BookFilter  # Apply the ProductFilter
+    search_fields = ['id','title', 'author']
+    ordering_fields = ['year_min', 'year_max', 'status']
+    pagination_class = BookPagination  # Add pagination
+
+    def destroy(self, request, pk=None):
+        book = get_object_or_404(Book, pk=pk)
+
+        if book.cover_image and os.path.isfile(book.cover_image.path):
+            os.remove(book.cover_image.path)
+
+        book.delete()
+
+        return Response({"success": "Product was deleted succesfully"}, status=status.HTTP_202_ACCEPTED)
+
+    def update(self, request, pk=None):
+        instance = get_object_or_404(Book, pk=pk)
+        # Update the instance fields with the new data
+        instance.author = request.data.get('author', instance.author)
+        instance.title = request.data.get('title', instance.author)
+        instance.year = request.data.get('year', instance.author)
+        instance.description = request.data.get('description', instance.author)
+        instance.status = request.data.get('status', instance.author)
+        if request.data.get('cover_image', instance.cover_image):
+            instance.cover_image = request.data.get('cover_image', instance.cover_image)
+        instance.save()
+
+        # Serialize the updated product
+        serializer = BookSerializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        # Retrieve data from the request
+        title = request.data.get('title')
+        author = request.data.get('author')
+        year = request.data.get('year')
+        stat = request.data.get('status')
+        description = request.data.get('description')
+        cover_image = request.FILES.get('cover_image')
+
+        # Validation: Ensure required fields are provided
+        if not title or not author or not year or not stat or not description:
+            return Response({"error": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the new Book object
+        book = Book(
+            title=title,
+            author=author,
+            year=year,
+            status=stat,
+            description=description,
+            cover_image=cover_image if cover_image else None,  # Only set if provided
+        )
+
+        # Save the new Book object
+        try:
+            book.save()
+        except Exception as e:
+            return Response({"error": f"Failed to create book: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Serialize and return the newly created book
+        serializer = self.get_serializer(book)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+def book_list(request):
+    return render(request, 'books_with_images.html')
+
+
+@csrf_exempt
+def book_detail(request, book_id):
+    try:
+        book = Book.objects.get(id=book_id)
+        return render(request, 'book_details.html', {'book': book})
+    except:
+        return render(request, '404.html')  # You can create a 404 page or handle it in another way
+
+def book_edit(request, book_id):
+    book = get_object_or_404(Book, id=book_id)
+    return render(request, 'edit.html', {'book': book})

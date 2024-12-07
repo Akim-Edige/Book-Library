@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изменить Книгу</title>
+    <style>
+        /* Optional styling for the Go Back button */
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .go-back-button:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Изменить Книгу</h1>
+
+        <form id="book-form">
+            {% csrf_token %}
+
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" value="{{ book.title }}" required><br><br>
+
+            <label for="author">Author:</label>
+            <input type="text" id="author" name="author" value="{{ book.author }}" required><br><br>
+
+            <label for="year">Year:</label>
+            <input type="number" id="year" name="year" value="{{ book.year }}" required><br><br>
+
+            <label for="status">Status:</label>
+            <select id="status" name="status" required>
+                <option value="В наличии" {% if book.status == "В наличии" %}selected{% endif %}>В наличии</option>
+                <option value="Выдана" {% if book.status == "Выдана" %}selected{% endif %}>Выдана</option>
+            </select><br><br>
+
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" required>{{ book.description }}</textarea><br><br>
+
+            <label for="cover_image">Cover Image:</label>
+            <input type="file" id="cover_image" name="cover_image"><br><br>
+
+            {% if book.cover_image %}
+                <label>Current Cover Image:</label><br>
+                <img src="{{ book.cover_image.url }}" alt="Current cover image" width="100"><br><br>
+            {% endif %}
+
+            <button type="button" onclick="submitForm()">Сохранить Изменения</button>
+        </form>
+
+        <!-- Go Back button -->
+        <button class="go-back-button" onclick="goBack()">Назад</button>
+    </div>
+
+    <script>
+        function submitForm() {
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;  // Get CSRF token
+
+            const bookId = "{{ book.id }}";
+            const formData = new FormData(document.getElementById('book-form'));
+
+            fetch(`/api/books/${bookId}/`, {
+                method: 'PUT',
+                headers: {
+                    'X-CSRFToken': csrftoken,  // Add CSRF token here
+                },
+                body: formData,  // The form data including any file uploads
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.id) {
+                        alert('Book updated successfully!');
+                        window.location.href = `/book/${data.id}/`;  // Redirect to the book details page after success
+                    } else {
+                        alert('Failed to update the book.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Go Back function to redirect to the main page
+        function goBack() {
+            window.location.href = '/';  // Redirect to the main page
+        }
+    </script>
+</body>
+</html>
