@@ -1,29 +1,18 @@
+from django.shortcuts import get_object_or_404, render
+from django.views.decorators.csrf import csrf_exempt
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import mixins, status, viewsets
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from .models import Book
+from .serializers import BookFilter, BookSerializer
 import os
 
-from django.shortcuts import redirect
-from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
-from .serializers import BookSerializer, BookFilter
-from .forms import BookForm
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, viewsets, status
-from django.shortcuts import render
-from .models import Book
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
 def create_book(request):
-    if request.method == 'POST':
-        form = BookForm(request.POST)
-        if form.is_valid():
-            form.save()  # Save the form data to the database
-            return redirect('show_books')  # Redirect to a new page after successful submission
-    else:
-        form = BookForm()
-
-    return render(request, 'create.html', {'form': form})
+    return render(request, 'create.html')
 
 
 class BookPagination(PageNumberPagination):
@@ -75,6 +64,9 @@ class BookViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         description = request.data.get('description')
         cover_image = request.FILES.get('cover_image')
 
+        if not cover_image:
+            cover_image = 'book_covers/default_cover.png'
+
         # Validation: Ensure required fields are provided
         if not title or not author or not year or not stat or not description:
             return Response({"error": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -86,7 +78,7 @@ class BookViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             year=year,
             status=stat,
             description=description,
-            cover_image=cover_image if cover_image else None,  # Only set if provided
+            cover_image=cover_image  # Only set if provided
         )
 
         # Save the new Book object
