@@ -1,3 +1,4 @@
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,6 +8,8 @@ from rest_framework.response import Response
 from .models import Book
 from .serializers import BookFilter, BookSerializer
 import os
+import boto3
+from botocore.exceptions import NoCredentialsError
 
 
 # Create your views here.
@@ -106,3 +109,22 @@ def book_detail(request, book_id):
 def book_edit(request, book_id):
     book = get_object_or_404(Book, id=book_id)
     return render(request, 'edit.html', {'book': book})
+
+
+# def s3_api(request):
+#     s3_client = boto3.client('s3')
+#
+#     try:
+#         # Generate the pre-signed URL
+#         url = s3_client.generate_presigned_url('put_object',
+#                                                Params={'Bucket': 'book-library-s3-bucket', 'Key': 'first_image'},
+#                                                ExpiresIn=60)
+#         return HttpResponse(url, content_type='text/plain', status=200)
+#
+#     except NoCredentialsError:
+#         print("Credentials not available.")
+#         return HttpResponse("Credentials not available", status=400)
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
+#         return HttpResponse(f"An error occurred: {e}", status=500)
+

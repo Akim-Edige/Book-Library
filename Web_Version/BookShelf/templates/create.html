@@ -54,9 +54,10 @@
     </div>
 
     <script>
-        function submitForm() {
+        async function submitForm() {
             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;  // Get CSRF token
             const formData = new FormData(document.getElementById('book-form'));
+
 
             fetch('/api/books/', {  // This is the correct URL for creating a new book
                 method: 'POST',
@@ -81,6 +82,7 @@
         function goBack() {
             window.location.href = '/';  // Redirect to the main page
         }
+
     </script>
 </body>
 </html>
