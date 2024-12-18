@@ -19,11 +19,11 @@
 1. Убедитесь, что у вас установлен Python 3.6 или выше.
 2. Скачайте или клонируйте репозиторий.
 ```bash
-   git clone https://github.com/Edige-prog/EM-assignment.git
+   git clone https://github.com/Akim-Edige/Book-Library.git
 ```
 3. Перейдите в директорию проекта.
 ```bash
-    cd EM-assignment
+    cd Book-Library
     cd Console_Version
 ````
 4. Запустите приложение командой:
@@ -36,7 +36,7 @@
 
 # Web версия проекта
 
-Это веб-версия проекта EM-assignment, разработанная с использованием Django.
+Это веб-версия проекта Book-Library, разработанная с использованием Django.
 
 ## Описание
 
@@ -76,8 +76,8 @@ https://drive.google.com/file/d/1mWiTtbWNuduC0Q23C_j6EwU3R7d7pNEk/view?usp=shari
 
 
 Чтобы зайти в админ панель изпользуйте это:
-Логин: library-admin
-Пароль: adminadmin
+- Логин: library-admin
+- Пароль: adminadmin
 
 ## Установка
 
